@@ -1,0 +1,142 @@
+作用域
+Python有四类作用域（Scope）。
+
+局部（Local）作用域）
+封闭（Enclosing）作用域
+全局（Global）作用域
+内置（Built-in）作用域
+LEGB规则
+在作用域中按名称去寻找对象（Python中一切皆对象）时，会按照LEGB规则去查找。 如果发生重名，也会按照LEGB规则，谁先被找到就用谁。
+
+所谓LEGB规则，很简单，就是作用域查找顺序为：
+
+Local -> Enclosing -> Global -> Built-in
+以下，用示例代码来解释LEGB作用域，及其规则。
+```python
+len = len([])       # (1)
+
+def a():
+    len = 1         # (2)
+
+    def b():
+        len = 2     # (3)
+        print(len)  # (4)
+
+    b()
+
+a()
+```
+len原本是Python的一个内置函数，在以上代码中被重新定义了三次。
+
+在(1)中，右边的len([])，就是内置的len函数。 而左边的len =，则是新定义的全局变量，值为0。
+
+在(2)中，又重新定义了len = 1。 这里是函数a的本地作用域，而对嵌套的函数b来说，则是Enclosing作用域。
+
+在(3)中，再次重新定义了len = 2。 这是函数b的本地作用域。
+
+在(4)中，打印len时，遵循LEGB规则，会打印Local的2。 如果没有(3)，会打印Enclosing，也就是函数a里的1。 如果没有(2)，会打印Global里的0。 如果没有(1)，会打印<built-in function len>。
+
+Python没有块级作用域
+Python里是没有块级作用域（Block scope）的。
+
+for i in range(10):
+    pass
+
+print(i)
+以上代码会打印出9。
+
+这里是一个比较糟糕的设计。 如果有块级作用域，那么在for块结束后，就不应该能访问i。 而现在，会得到i的最后一个值。
+
+更糟糕的是，如果range()里是0，那么for循环会直接退出。 这时再print(i)，结果就是：
+
+NameError: name 'i' is not defined
+
+所以，虽然Python没有块级作用域，但是建议就当它有。 不要在代码块以外，使用代码块内定义的东西。
+
+关键字global
+前面只是谈及跨作用域的读取，还没谈及跨作用域的写入。
+
+i = 0
+
+def a():
+    i = 1
+    print('local:', i)
+
+a()
+print('global:', i)
+以上代码的输出结果为：
+
+local: 1
+global: 0
+也就是说，a函数里的i = 1，是定义一个新的局部变量，而非对全局变量的修改。
+
+如果需要对全局变量i进行修改，则需要使用Python的global关键字。
+
+i = 0
+
+def a():
+    global i
+    i = 1
+    print('local:', i)
+
+a()
+print('global:', i)
+以上代码的输出结果为：
+
+local: 1
+global: 1
+关键字nonlocal
+修改Global变量的问题，可以用global关键字来解决； 修改Enclosing变量的问题，就需要使用nonlocal关键字。
+
+i = 0
+
+def a():
+    i = 1
+
+    def b():
+        nonlocal i
+        i = 2
+
+    b()
+    print(i)
+
+a()
+以上代码的输出结果为2，这就是nonlocal的功效。
+
+nonlocal不能代替global。 如果在上述代码的函数a中，就只能使用global。 因为，外层就是Global作用域了。
+
+在多重嵌套中，nonlocal只会上溯一层； 而如果上一层没有，则会继续上溯。
+
+def a():
+    i = 1
+    def b():
+        # i = 2
+        def c():
+            nonlocal i
+            i = 3
+
+        c()
+        print('b:', i)
+
+    b()
+    print('a:', i)
+
+a()
+以上代码的输出结果为：
+
+b: 3
+a: 3
+因为函数b中没有i，所以nonlocal上溯到了函数a中。
+
+（注意：如果a中也没有，就回到了Global作用域，nonlocal会报错。）
+
+如果以上代码中，函数b里的注释# i = 2去掉，则输出变为：
+
+b: 3
+a: 1
+因为nonlocal只会上溯一层，到函数b，所以函数a中的i没有被修改。
+
+Python 2的问题
+LEGB规则是在Python 2.2以后确立的，在那以前不成立，是另一套。
+
+Python 2中没有nonlocal关键字，所以无法对Enclosing作用域的上一层，进行写操作。
