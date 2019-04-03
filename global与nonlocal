@@ -1,17 +1,17 @@
-# 作用域
+作用域
 Python有四类作用域（Scope）。
 
 局部（Local）作用域）
 封闭（Enclosing）作用域
 全局（Global）作用域
 内置（Built-in）作用域
-# LEGB规则
+LEGB规则
 在作用域中按名称去寻找对象（Python中一切皆对象）时，会按照LEGB规则去查找。 如果发生重名，也会按照LEGB规则，谁先被找到就用谁。
 
 所谓LEGB规则，很简单，就是作用域查找顺序为：
 
 Local -> Enclosing -> Global -> Built-in
-# 以下，用示例代码来解释LEGB作用域，及其规则。
+以下，用示例代码来解释LEGB作用域，及其规则。
 ```Bash
 len = len([])       # (1)
 
