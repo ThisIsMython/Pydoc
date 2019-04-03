@@ -12,7 +12,7 @@ LEGB规则
 
 Local -> Enclosing -> Global -> Built-in
 以下，用示例代码来解释LEGB作用域，及其规则。
-```Python
+```Bash
 len = len([])       # (1)
 
 def a():
