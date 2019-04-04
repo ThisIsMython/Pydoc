@@ -1,142 +1,187 @@
-作用域
-Python有四类作用域（Scope）。
+Global, Local and nonlocal Variables
+Earth and moon, signifying global and local The way Python uses global and local variables is maverick. While in many or most other programming languages variables are treated as global if not otherwise declared, Python deals with variables the other way around. They are local, if not otherwise declared. The driving reason behind this approach is that global variables are generally bad practice and should be avoided. In most cases where you are tempted to use a global variable, it is better to utilize a parameter for getting a value into a function or return a value to get it out. Like in many other program structures, Python also imposes good programming habit by design. 
 
-局部（Local）作用域）
-封闭（Enclosing）作用域
-全局（Global）作用域
-内置（Built-in）作用域
-LEGB规则
-在作用域中按名称去寻找对象（Python中一切皆对象）时，会按照LEGB规则去查找。 如果发生重名，也会按照LEGB规则，谁先被找到就用谁。
+So when you define variables inside a function definition, they are local to this function by default. This means that anything you will do to such a variable in the body of the function will have no effect on other variables outside of the function, even if they have the same name. This means that the function body is the scope of such a variable, i.e. the enclosing context where this name with its values is associated. 
 
-所谓LEGB规则，很简单，就是作用域查找顺序为：
+All variables have the scope of the block, where they are declared and defined in. They can only be used after the point of their declaration. 
 
-Local -> Enclosing -> Global -> Built-in
-以下，用示例代码来解释LEGB作用域，及其规则。
-```Bash
-len = len([])       # (1)
+Just to make things clear: Variables don't have to be and can't be declared in the way they are declared in programming languages like Java or C. Variables in Python are implicitly declared by defining them, i.e. the first time you assign a value to a variable, this variable is declared and has automatically the data type of the object which has to be assigned to it. If you have problems understanding this, please consult our chapter about data types and variables, see links on the left side. 
 
-def a():
-    len = 1         # (2)
+Global and local Variables in Functions
+In the following example, we want to demonstrate, how global values can be used inside the body of a function:
 
-    def b():
-        len = 2     # (3)
-        print(len)  # (4)
+def f(): 
+    print(s) 
+s = "I love Paris in the summer!"
+f()
+The variable s is defined as the string "I love Paris in the summer!", before calling the function f(). The body of f() consists solely of the "print(s)" statement. As there is no local variable s, i.e. no assignment to s, the value from the global variable s will be used. So the output will be the string "I love Paris in the summer!". The question is, what will happen, if we change the value of s inside of the function f()? Will it affect the global variable as well? We test this in the following piece of code:
+def f(): 
+    s = "I love London!"
+    print(s) 
 
-    b()
+s = "I love Paris!" 
+f()
+print(s)
+The output looks like this:
+I love London!
+I love Paris!
+What if we combine the first example with the second one, i.e. we first access s with a print() function, hoping to get the global value, and then assigning a new value to it? Assigning a value to it, means - as we have previously stated - creating a local variable s. So, we would have s both as a global and a local variable in the same scope, i.e. the body of the function. Python fortunately doesn't allow this ambiguity. So, it will throw an error, as we can see in the following example:
+>>> def f(): 
+...   print(s)
+...   s = "I love London!"
+...   print(s)
+... 
+>>> s = "I love Paris!"
+>>> f()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in f
+UnboundLocalError: local variable 's' referenced before assignment
+>>> 
+A variable can't be both local and global inside of a function. So Python decides that we want a local variable due to the assignment to s inside of f(), so the first print statement before the definition of s throws the error message above. Any variable which is changed or created inside of a function is local, if it hasn't been declared as a global variable. To tell Python, that we want to use the global variable, we have to explicitly state this by using the keyword "global", as can be seen in the following example:
+def f():
+    global s
+    print(s)
+    s = "Only in spring, but London is great as well!"
+    print(s)
 
-a()
-```
-len原本是Python的一个内置函数，在以上代码中被重新定义了三次。
 
-在(1)中，右边的len([])，就是内置的len函数。 而左边的len =，则是新定义的全局变量，值为0。
+s = "I am looking for a course in Paris!" 
+f()
+print(s)
+We have solved our problem. There is no ambiguity left. The output of this small script looks like this:
+I am looking for a course in Paris!
+Only in spring, but London is great as well!
+Only in spring, but London is great as well!
+Local variables of functions can't be accessed from outside, when the function call has finished:
+def f():
+    s = "I am globally not known"
+    print(s) 
 
-在(2)中，又重新定义了len = 1。 这里是函数a的本地作用域，而对嵌套的函数b来说，则是Enclosing作用域。
+f()
+print(s)
+Starting this script gives us the following output with an error message:
+monty@python:~$ python3 ex.py 
+I am globally not known
+Traceback (most recent call last):
+  File "ex.py", line 6, in <module>
+    print(s)
+NameError: name 's' is not defined
+monty@python:~$ 
+The following example shows a wild combination of local and global variables and function parameters:
+ 
+def foo(x, y):
+    global a
+    a = 42
+    x,y = y,x
+    b = 33
+    b = 17
+    c = 100
+    print(a,b,x,y)
 
-在(3)中，再次重新定义了len = 2。 这是函数b的本地作用域。
+a, b, x, y = 1, 15, 3,4 
+foo(17, 4)
+print(a, b, x, y)
+The output looks like this:
+42 17 4 17
+42 15 3 4
 
-在(4)中，打印len时，遵循LEGB规则，会打印Local的2。 如果没有(3)，会打印Enclosing，也就是函数a里的1。 如果没有(2)，会打印Global里的0。 如果没有(1)，会打印<built-in function len>。
 
-Python没有块级作用域
-Python里是没有块级作用域（Block scope）的。
-
-for i in range(10):
-    pass
-
-print(i)
-以上代码会打印出9。
-
-这里是一个比较糟糕的设计。 如果有块级作用域，那么在for块结束后，就不应该能访问i。 而现在，会得到i的最后一个值。
-
-更糟糕的是，如果range()里是0，那么for循环会直接退出。 这时再print(i)，结果就是：
-
-NameError: name 'i' is not defined
-
-所以，虽然Python没有块级作用域，但是建议就当它有。 不要在代码块以外，使用代码块内定义的东西。
-
-关键字global
-前面只是谈及跨作用域的读取，还没谈及跨作用域的写入。
-
-i = 0
-
-def a():
-    i = 1
-    print('local:', i)
-
-a()
-print('global:', i)
-以上代码的输出结果为：
-
-local: 1
-global: 0
-也就是说，a函数里的i = 1，是定义一个新的局部变量，而非对全局变量的修改。
-
-如果需要对全局变量i进行修改，则需要使用Python的global关键字。
-
-i = 0
-
-def a():
-    global i
-    i = 1
-    print('local:', i)
-
-a()
-print('global:', i)
-以上代码的输出结果为：
-
-local: 1
-global: 1
-关键字nonlocal
-修改Global变量的问题，可以用global关键字来解决； 修改Enclosing变量的问题，就需要使用nonlocal关键字。
-
-i = 0
-
-def a():
-    i = 1
-
-    def b():
-        nonlocal i
-        i = 2
-
-    b()
-    print(i)
-
-a()
-以上代码的输出结果为2，这就是nonlocal的功效。
-
-nonlocal不能代替global。 如果在上述代码的函数a中，就只能使用global。 因为，外层就是Global作用域了。
-
-在多重嵌套中，nonlocal只会上溯一层； 而如果上一层没有，则会继续上溯。
-
-def a():
-    i = 1
-    def b():
-        # i = 2
-        def c():
-            nonlocal i
-            i = 3
-
-        c()
-        print('b:', i)
-
-    b()
-    print('a:', i)
-
-a()
-以上代码的输出结果为：
-
-b: 3
-a: 3
-因为函数b中没有i，所以nonlocal上溯到了函数a中。
-
-（注意：如果a中也没有，就回到了Global作用域，nonlocal会报错。）
-
-如果以上代码中，函数b里的注释# i = 2去掉，则输出变为：
-
-b: 3
-a: 1
-因为nonlocal只会上溯一层，到函数b，所以函数a中的i没有被修改。
-
-Python 2的问题
-LEGB规则是在Python 2.2以后确立的，在那以前不成立，是另一套。
-
-Python 2中没有nonlocal关键字，所以无法对Enclosing作用域的上一层，进行写操作。
+Global Variables in Nested Functions
+We will examine now what will happen, if we use the global keyword inside of nested functions. The following example shows a situation where a variable x is used in various scopes:
+def f():
+    x = 42
+    def g():
+        global x
+        x = 43
+    print("Before calling g: " + str(x))
+    print("Calling g now:")
+    g()
+    print("After calling g: " + str(x))
+    
+f()
+print("x in main: " + str(x))
+This program returns the following results:
+Before calling g: 42
+Calling g now:
+After calling g: 42
+x in main: 43
+We can see that the global statement inside of the nested function g does not affect the variable x of the function f, i.e. it keeps its value 42. We can also deduce from this example that after calling f() a variable x exists in the module namespace and has the value 43. This means that the global keyword in nested functions does not affect the namespace of their enclosing namespace! This is consistent to what we have found out in the previous subchapter: A variable defined inside of a function is local unless it is explicitly marked as global. In other words, we can refer a variable name in any enclosing scope, but we can only rebind variable names in the local scope by assigning to it or in the module-global scope by using a global declaration. We need a way to access variables of other scopes as well. The way to do this are nonlocal definitions, which we will explain in the next chapter.
+nonlocal Variables
+Python3 introduced nonlocal variables as a new kind of variables. nonlocal variables have a lot in common with global variables. One difference to global variables lies in the fact that it is not possible to change variables from the module scope, i.e. variables which are not defined inside of a function, by using the nonlocal statement. We show this in the two following examples:
+def f():
+    global x
+    print(x)
+    
+x = 3
+f()
+This program is correct and returns the number 3 as the output. We will change "global" to "nonlocal" in the following program:
+def f():
+    nonlocal x
+    print(x)
+    
+x = 3
+f()
+The program, which we have saved as example1.py, cannot be executed anymore now. We get the following error:
+ File "example1.py", line 2
+    nonlocal x
+SyntaxError: no binding for nonlocal 'x' found
+This means that nonlocal bindings can only be used inside of nested functions. A nonlocal variable has to be defined in the enclosing function scope. If the variable is not defined in the enclosing function scope, the variable cannot be defined in the nested scope. This is another difference to the "global" semantics.
+def f():
+    x = 42
+    def g():
+        nonlocal x
+        x = 43
+    print("Before calling g: " + str(x))
+    print("Calling g now:")
+    g()
+    print("After calling g: " + str(x))
+    
+x = 3
+f()
+print("x in main: " + str(x))
+Calling the previous program results in the following output:
+Before calling g: 42
+Calling g now:
+After calling g: 43
+x in main: 3
+In the previous example the variable x was defined prior to the call of g. We get an error if it isn't defined:
+def f():
+    #x = 42
+    def g():
+        nonlocal x
+        x = 43
+    print("Before calling g: " + str(x))
+    print("Calling g now:")
+    g()
+    print("After calling g: " + str(x))
+    
+x = 3
+f()
+print("x in main: " + str(x))
+We get the following error message:
+  File "example3.py", line 4
+    nonlocal x
+SyntaxError: no binding for nonlocal 'x' found
+The program works fine - with or without the line "x = 42" inside of f - , when we change "nonlocal" to "global":
+def f():
+    #x = 42
+    def g():
+        global x
+        x = 43
+    print("Before calling g: " + str(x))
+    print("Calling g now:")
+    g()
+    print("After calling g: " + str(x))
+    
+x = 3
+f()
+print("x in main: " + str(x))
+This leads to the following output:
+Calling g now:
+The value of x after the call to g: 43
+Before calling g: 3
+Calling g now:
+After calling g: 43
+x in main: 43
+Yet there is a huge difference: The value of the global x is changed now! 
